@@ -140,7 +140,6 @@ function findSeams(nrgimg) {
     ];
     for (var i = nrgimg.height-2; i >= 0; i--) {
         var prev_seam = seam[seam.length - 1];
-        console.log(prev_seam);
         seam.push(prev_seam - 1 + minIndex(sum_nrg[i].slice(
                                             Math.max(0, prev_seam - 1),
                                             Math.min(seam.length - 1, prev_seam + 2)
