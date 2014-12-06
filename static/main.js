@@ -138,7 +138,6 @@ function findSeams(nrgimg) {
     var seam = [
         minIndex(sum_nrg[nrgimg.height-1])
     ];
-    console.log(seam);
     for (var i = nrgimg.height-2; i >= 0; i--) {
         var prev_seam = seam[seam.length - 1];
         console.log(prev_seam);
