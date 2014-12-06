@@ -123,10 +123,6 @@ function findSeams(nrgimg) {
                     pt += Math.min(sum_nrg[y-1][x-1], sum_nrg[y-1][x], sum_nrg[y-1][x+1]);
                 }
             }
-            // focus that area
-            if (100 < x && x < 200) {
-                pt = 0;
-            }
             row.push(pt);
         }
         sum_nrg.push(row);
