@@ -138,51 +138,65 @@ function energyFunction(imgdata) {
 }
 
 function findSeams(nrgimg) {
-    var sum_nrg = [];
-    for (var y = 0; y < nrgimg.height; y++) {
-        var row = [];
-        for (var x = 0; x < nrgimg.width; x++) {
-            var pt = nrgimg.data[pixelIndex(nrgimg, x, y)];
-            if (y > 1) {
-                if (x == 0) {
-                    pt += Math.min(sum_nrg[y-1][x], sum_nrg[y-1][x+1]);
-                } else if (x == nrgimg.width - 1) {
-                    pt += Math.min(sum_nrg[y-1][x-1], sum_nrg[y-1][x]);
-                } else {
-                    pt += Math.min(sum_nrg[y-1][x-1], sum_nrg[y-1][x], sum_nrg[y-1][x+1]);
-                }
-            }
-            row.push(pt);
-        }
-        sum_nrg.push(row);
-    }
     function minIndex(row) {
         var index = 0;
         for (var i = 0; i < row.length; i++) {
-            if (row[index] >= row[i])
+            if (row[index] > row[i])
                 index = i;
         }
         return index;
     }
+    var idxes = [];
+    var sum_nrg = [];
+    for (var y = 0; y < nrgimg.height; y++) {
+        var idxrow = [];
+        var row = [];
+        for (var x = 0; x < nrgimg.width; x++) {
+            var pt = nrgimg.data[pixelIndex(nrgimg, x, y)];
+            var idx = 0;
+            if (y > 1) {
+                var choices = [];
+                if (x == 0) {
+                    choices = [Math.INT_MAX, sum_nrg[y-1][x], sum_nrg[y-1][x+1]];
+                } else if (x == nrgimg.width - 1) {
+                    choices = [sum_nrg[y-1][x-1], sum_nrg[y-1][x], Math.INT_MAX];
+                } else {
+                    choices = [sum_nrg[y-1][x-1], sum_nrg[y-1][x], sum_nrg[y-1][x+1]];
+                }
+                var idx = minIndex(choices) - 1;
+            }
+            idxrow.push(idx)
+            row.push(pt);
+        }
+        idxes.push(idxrow);
+        sum_nrg.push(row);
+    }
+    var wipsum = document.getElementById('wipsum');
+    var ctx = wipsum.getContext('2d');
+    var img = ctx.createImageData(sum_nrg.length, sum_nrg[0].length);
+    for (var y = 0; y < nrgimg.height; y++) {
+        for (var x = 0; x < nrgimg.width; x++) {
+            img.data[pixelIndex(img, x, y)    ] = sum_nrg[y][x] * (idxes[y][x] == -1) ? 1 : 0;
+            img.data[pixelIndex(img, x, y) + 1] = sum_nrg[y][x] * (idxes[y][x] ==  0) ? 1 : 0;
+            img.data[pixelIndex(img, x, y) + 2] = sum_nrg[y][x] * (idxes[y][x] ==  1) ? 1 : 0;
+            img.data[pixelIndex(img, x, y) + 3] = 255;
+        }
+    }
+    wipsum.width = nrgimg.width;
+    wipsum.height = nrgimg.height;
+    ctx.putImageData(img, 0, 0);
     var seam = [
         minIndex(sum_nrg[nrgimg.height-1])
     ];
+    console.log(seam[0]);
     for (var i = nrgimg.height-2; i >= 0; i--) {
         var prev_seam = seam[seam.length - 1];
 
         var slicemin = Math.max(0, prev_seam - 1);
         var slicemax = Math.min(seam.length - 1, prev_seam + 2);
-        var dx = -1;
-        if (x <= 1) {
-            dx = 1;
-        }
-        if (x >= nrgimg.width-2) {
-            dx = 0;
-        }
+        var dx = idxes[i][prev_seam];
 
-        seam.push(prev_seam + dx + minIndex(sum_nrg[i].slice(slicemin, slicemax)
-                          )
-                );
+        seam.push(prev_seam + dx);
     }
     return seam.reverse();
 }
