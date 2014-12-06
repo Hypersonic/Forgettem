@@ -86,10 +86,11 @@ function energyFunction(imgdata) {
 
     for (var ix = 0; ix < imgdata.width; ix++) {
         for (var iy = 0; iy < imgdata.height; iy++) {
+            // R, G, B channels
             for (var k = 0; k < 3; k++) {
                 nrgimg.data[pixelIndex(nrgimg, ix, iy) + k] = getSobelEnergy(imgdata, ix, iy);
             }
-            nrgimg.data[pixelIndex(nrgimg, ix, iy) + 3] = 255;//getSobelEnergy(imgdata, ix, iy);
+            nrgimg.data[pixelIndex(nrgimg, ix, iy) + 3] = 255; // alpha channel
         }
     }
 
