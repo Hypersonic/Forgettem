@@ -23,6 +23,9 @@ function run() {
     // Draw image
     srcctx.drawImage(img, 0, 0);
 
+    var imgdata = srcctx.getImageData(0, 0, src.width, src.height);
+    var nrgimg = energyFunction(imgdata);
+    wipctx.putImageData(nrgimg, 0, 0);
     // Test filling with primary colors
     //srcctx.fillStyle = '#ff0000';
     //srcctx.fillRect(0, 0, 200, 200);
@@ -77,6 +80,53 @@ function shrink() {
 
 }
 
+function expand() {
+    var src = document.getElementById('src');
+    var wip = document.getElementById('wip');
+    var dst = document.getElementById('dst');
+    var srcctx = src.getContext('2d');
+    var wipctx = wip.getContext('2d');
+    var dstctx = dst.getContext('2d');
+    var imgdata = srcctx.getImageData(0, 0, src.width, src.height);
+
+    var seam;
+    var seam_img;
+    src.width+=1;
+    wip.width+=1;
+    dst.width+=1;
+    var nrgimg = energyFunction(imgdata);
+    wipctx.putImageData(nrgimg, 0, 0);
+
+    seam = findSeams(nrgimg);
+    seam_img = dstctx.createImageData(dst.width+1, dst.height);
+    console.log(seam_img);
+    for (var y = 0; y < seam_img.height; y++) {
+        for (var x = 0; x < seam_img.width; x++) {
+            if (seam[y] === x) {
+                seam_img.data[pixelIndex(seam_img, x, y)  ] = (imgdata.data[pixelIndex(imgdata, x, y)  ] + imgdata.data[pixelIndex(imgdata, x + 1, y)  ]) / 2;
+                seam_img.data[pixelIndex(seam_img, x, y)+1] = (imgdata.data[pixelIndex(imgdata, x, y)+1] + imgdata.data[pixelIndex(imgdata, x + 1, y)+1]) / 2;
+                seam_img.data[pixelIndex(seam_img, x, y)+2] = (imgdata.data[pixelIndex(imgdata, x, y)+2] + imgdata.data[pixelIndex(imgdata, x + 1, y)+2]) / 2;
+                seam_img.data[pixelIndex(seam_img, x, y)+3] = 255;
+                x++;
+            }
+            seam_img.data[pixelIndex(seam_img, x, y)  ] = imgdata.data[pixelIndex(imgdata, x, y)  ];
+            seam_img.data[pixelIndex(seam_img, x, y)+1] = imgdata.data[pixelIndex(imgdata, x, y)+1];
+            seam_img.data[pixelIndex(seam_img, x, y)+2] = imgdata.data[pixelIndex(imgdata, x, y)+2];
+            seam_img.data[pixelIndex(seam_img, x, y)+3] = 255;
+        }
+    }
+    srcctx.putImageData(seam_img, 0, 0);
+    // draw seam
+    for (var y = 0; y < seam.length; y++) {
+        seam_img.data[pixelIndex(seam_img, seam[y], y)  ] = 255;
+        seam_img.data[pixelIndex(seam_img, seam[y], y)+1] = 0;
+        seam_img.data[pixelIndex(seam_img, seam[y], y)+2] = 0;
+        seam_img.data[pixelIndex(seam_img, seam[y], y)+3] = 255;
+    }
+    dstctx.putImageData(seam_img, 0, 0);
+
+}
+
 // Return an ImageData where each pixel has an energy value (R, G, B are all set the same)
 function energyFunction(imgdata) {
     // Effectively get the pixel, clamped into range, for the Sobel operator
@@ -93,7 +143,7 @@ function energyFunction(imgdata) {
             y = imgdata.height - 1;
         }
         var px = getPixel(imgdata, x, y);
-        return (px.r + px.g + px.b) / 4;
+        return (px.r + px.g + px.b) / 3;
     }
 
     function getSobelEnergy(imgdata, x, y) {
@@ -176,9 +226,9 @@ function findSeams(nrgimg) {
     var img = ctx.createImageData(sum_nrg.length, sum_nrg[0].length);
     for (var y = 0; y < nrgimg.height; y++) {
         for (var x = 0; x < nrgimg.width; x++) {
-            img.data[pixelIndex(img, x, y)    ] = sum_nrg[y][x] * (idxes[y][x] == -1) ? 1 : 0;
-            img.data[pixelIndex(img, x, y) + 1] = sum_nrg[y][x] * (idxes[y][x] ==  0) ? 1 : 0;
-            img.data[pixelIndex(img, x, y) + 2] = sum_nrg[y][x] * (idxes[y][x] ==  1) ? 1 : 0;
+            img.data[pixelIndex(img, x, y)    ] = sum_nrg[y][x];
+            img.data[pixelIndex(img, x, y) + 1] = sum_nrg[y][x];
+            img.data[pixelIndex(img, x, y) + 2] = sum_nrg[y][x];
             img.data[pixelIndex(img, x, y) + 3] = 255;
         }
     }
